@@ -1,0 +1,37 @@
+ns com.kanzhun.api
+
+struct S1 {
+    string s
+}
+
+struct Book {
+    i32 id
+    string title
+    string isbn
+    float32 price
+    string description
+    S1 b
+}
+
+struct NewestReq {
+    i32 limit
+    i32 offset
+}
+
+struct SearchBookReq {
+    string q
+    i32 limit
+    i32 offset
+}
+
+@url(/books/newest)
+@get
+func list<Book> GetNewest(NewestReq req);
+
+@url(/books/search)
+@get
+func list<Book> SearchBook(SearchBookReq req);
+
+@url(/batch)
+batch Batch(GetNewest, SearchBook)
+

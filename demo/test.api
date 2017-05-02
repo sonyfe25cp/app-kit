@@ -1,0 +1,54 @@
+ns com.kanzhun.api
+
+struct User {
+       i32 id,
+       float32 lat,
+       float32 lng,
+}
+
+struct AcItem {
+       string label
+       string value
+}
+
+struct AutoCompleteReq {
+    string kind,
+    string q,
+    i32 limit
+}
+
+@url(/ac/:kind?q=:q)
+@get
+func list<AcItem> AutoComplete(AutoCompleteReq req)
+
+
+struct Salary {
+       i32 id,
+
+       string title,
+       string titleId,
+       string companyId,
+       string count,
+       string avg,
+       string min,
+       string max
+}
+
+struct SearchSalaryResp {
+      list<Salary> salaries,
+      i32 avg,
+      i32 count,
+}
+
+struct SearchSalaryReq {
+      i32 companyId,
+      i32 page,
+      i32 pageSize
+}
+
+// wget http://localhost:8080/s/salary?companyId=1234&page=10&pageSize=100
+@url(/s/salary)
+func SearchSalaryResp SearchSalary(SearchSalaryReq req)
+
+@url(/batch)
+batch Batch(SearchSalary, AutoComplete)

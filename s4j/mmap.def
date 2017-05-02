@@ -1,0 +1,25 @@
+struct JobProperty {
+       i32 id
+
+       i16 experience
+       i16 degree
+
+       i32 updateTs
+       i32 publishTs
+
+       i16 ind1
+       i16 ind2
+       i16 ind3
+       i16 ind4
+
+       i32 salary
+       i32 score
+       i32 kind
+
+       i16 city1
+       i16 city2
+       i16 city3
+       i16 city4
+
+       byte tag
+}

@@ -1,0 +1,801 @@
+namespace java cn.techwolf.data.db
+
+struct Interview {
+       i32 id
+       i32 companyId
+       i32 difficulty
+       i32 experience
+       i32 source
+       i32 cityCode,
+       i32 result
+       i32 companySort,
+       datetime createTime,
+       string title
+       string jobTitle
+       string company
+       string process
+       i32 industryCode
+       i32 weight
+       i32 companyLevel
+}
+
+func list<Interview> getInterviews(i32 minid, i32 limit) {
+
+SELECT
+  ci.id,
+  ci.create_time,
+  ci.company_id,
+  ci.difficulty,
+  ci.experience,
+  ci.source,
+  ci.city_code,
+  ci.title,
+  ci.job_title,
+  ci.result,
+  ci.weight,
+  cie.process,
+  c.name                            company,
+  c.industry_code,
+  c.level company_level,
+  ci.weight,
+  GREATEST(stat.company_sort, 5000) company_sort
+FROM company_interview ci
+  JOIN company_interview_extra cie ON cie.interview_id = ci.id
+  JOIN company c ON c.id = ci.company_id
+  JOIN company_stat stat ON c.id = stat.company_id
+WHERE ci.status = 1 and ci.id > :minid
+ORDER BY ci.id
+limit :limit
+
+}
+
+func list<Interview> getInterviews(list<i32> ids) {
+
+SELECT
+  ci.id,
+  ci.create_time,
+  ci.company_id,
+  ci.difficulty,
+  ci.experience,
+  ci.source,
+  ci.city_code,
+  ci.title,
+  ci.job_title,
+  ci.result,
+  ci.weight,
+  ci.employee_status,
+  cie.process,
+  c.name                            company,
+  c.industry_code,
+  ci.weight,
+  GREATEST(stat.company_sort, 5000) company_sort
+FROM company_interview ci
+  JOIN company_interview_extra cie ON cie.interview_id = ci.id
+  JOIN company c ON c.id = ci.company_id
+  JOIN company_stat stat ON c.id = stat.company_id
+WHERE ci.status = 1 and ci.id in (:ids)
+ORDER BY FIELD(ci.id, :ids)
+}
+
+struct JobSalary {
+       i32 id,
+       i32 companyId,
+       string jobTitle,
+       i32 salary,
+       i32 cityCode
+       i32 industry
+}
+
+func list<JobSalary> getJobSalaries(i32 minid, i32 limit) {
+    SELECT
+      s.*,
+      c.industry_code industry
+    FROM job_salary s
+      JOIN company c ON s.company_id = c.id
+    WHERE s.id > :minid
+    ORDER BY s.id
+    LIMIT :limit
+}
+
+struct Salary {
+    i32 id
+    i32 cityCode
+    i32 jobExperience,
+    string jobTitle,
+    i32 salary,
+    i32 bonus,
+    i32 companyId,
+    string company
+    i32 industryCode
+    i32 scale
+    i32 base
+    i32 subsidy
+    i32 salesCommission
+    i32 others
+    datetime createTime
+    i32 companyLevel
+}
+
+
+func list<Salary> getSalaries(i32 minid, i32 limit) {
+
+SELECT
+  s.id,
+  s.city_code,
+  s.job_experience,
+  s.job_title,
+  s.pay_base + s.pay_bonus + s.pay_subsidy + s.pay_sales_commission + s.pay_stock + s.pay_others salary,
+  s.pay_bonus bonus,
+  s.pay_base  base,
+  s.pay_subsidy subsidy,
+  s.pay_sales_commission sales_commission,
+  s.pay_others  others,
+  s.company_id,
+  c.name                                                                                         company,
+  c.level company_level,
+  c.scale,
+  c.industry_code,
+  s.create_time
+FROM kanzhun.company_salary s
+  JOIN company c ON s.company_id = c.id
+WHERE s.status = 1 AND s.id > :minid
+ORDER BY s.id
+LIMIT :limit
+
+}
+
+func list<Salary> getSalaries(list<i32> ids) {
+SELECT
+  s.id,
+  s.city_code,
+  s.job_experience,
+  s.job_title,
+  s.pay_base + s.pay_bonus + s.pay_subsidy + s.pay_sales_commission + s.pay_stock + s.pay_others salary,
+  s.pay_bonus bonus,
+  s.pay_base  base,
+  s.pay_subsidy subsidy,
+  s.pay_sales_commission sales_commission,
+  s.pay_others  others,
+  s.company_id,
+  c.name                                                                                         company,
+  c.scale,
+  c.industry_code,
+  s.create_time
+FROM kanzhun.company_salary s
+  JOIN company c ON s.company_id = c.id
+WHERE s.status = 1 AND s.id in (:ids)
+ORDER BY FIELD(s.id, :ids)
+
+}
+
+func list<Salary> getCVSalaries(i32 minid, i32 limit) {
+
+SELECT
+  s.id,
+  s.city_code,
+  s.job_experience,
+  s.job_title,
+  s.pay_base + s.pay_bonus + s.pay_subsidy + s.pay_sales_commission + s.pay_stock + s.pay_others salary,
+  s.company_id,
+  c.name                                                                                         company,
+  c.scale,
+  c.industry_code
+FROM kanzhun.company_salary_cv_useful s
+  JOIN company c ON s.company_id = c.id
+WHERE s.id > :minid
+ORDER BY s.id
+LIMIT :limit
+
+}
+
+struct City {
+  i32 code
+  string name
+  string grade
+}
+
+func list<City> getAllCities() {
+  select code, name, grade from kanzhun.city order by id
+}
+
+
+func list<string> getAllSpams() {
+     select name from jobs.job_blacklist_keywords
+}
+
+struct KzJob {
+  i32 id
+  string title
+  string description
+
+  i32 place
+  string address
+  i32 lowSalary
+  i32 highSalary
+
+  i32 industryCode
+  i32 kind
+  i32 degree
+  i32 experience
+  datetime publishTime
+  datetime updateTime
+  i32 companyId
+
+  string company
+}
+
+func list<KzJob> getKzJobs(long maxid, i32 limit, datetime oldtime) {
+
+SELECT
+  j.*,
+  c.name       company,
+  c.industry_code,
+  city.name AS city
+FROM job j JOIN kanzhun.company c ON j.company_id = c.id
+  JOIN city ON city.code = j.place
+WHERE j.status = 0 AND j.audit != 2
+      AND j.id < :maxid AND update_time > :oldtime
+ORDER BY j.id DESC
+LIMIT :limit
+
+}
+
+func list<KzJob> getKzJobs(list<i32> ids) {
+SELECT
+  j.*,
+  c.name       company,
+  c.industry_code,
+  city.name AS city
+FROM kanzhun.job j JOIN kanzhun.company c ON j.company_id = c.id
+  JOIN kanzhun.city ON city.code = j.place
+WHERE j.status = 0 AND j.audit != 2
+      AND j.id IN (:ids)
+}
+
+struct FetchedJob {
+  long id
+  string url
+  string provider
+  string title
+  string company
+  string amount
+  string place
+
+  string experience
+  string salary
+
+  string degree
+  string kind
+  string age
+  string sex
+  bool fromLietou
+  int status
+
+  string jobclass
+  string industry
+
+  datetime publishDate
+  datetime updateDate
+
+  string description;
+  string requirement;
+}
+
+func list<FetchedJob> getJobs(list<i32> ids) {
+
+  SELECT
+    *
+  FROM jobs
+  WHERE id IN (:ids) and COALESCE(status, 0) & 8 != 8
+
+}
+
+func list<FetchedJob> getJobs(i64 maxid, i32 limit) {
+
+  SELECT
+    *
+  FROM jobs
+  WHERE COALESCE(status, 0) & 8 != 8 AND title != '' AND id < :maxid
+  ORDER BY id DESC
+  LIMIT :limit
+}
+
+
+
+func list<FetchedJob> getJobsOld(list<i32> ids) {
+
+  SELECT
+    *
+  FROM jobs_old
+  WHERE id IN (:ids) and COALESCE(status, 0) & 8 != 8
+
+}
+
+func list<FetchedJob> getJobs2(i64 maxid, i32 limit) {
+
+  SELECT
+    *
+  FROM jobs2
+  WHERE COALESCE(status, 0) & 8 != 8 AND title != '' AND id < :maxid
+  ORDER BY id DESC
+  LIMIT :limit
+}
+
+func list<FetchedJob> getJobs2(list<i32> ids) {
+
+SELECT
+  *
+FROM jobs2 j
+WHERE COALESCE(status, 0) & 8 != 8 AND j.id IN (:ids)
+ORDER BY FIELD(j.id, :ids)
+
+}
+
+
+func list<FetchedJob> getJobsOld(i64 maxid, i32 limit) {
+
+    SELECT
+      *
+    FROM jobs_old
+    WHERE title != '' AND id < :maxid
+    ORDER BY id DESC
+    LIMIT :limit
+}
+
+
+
+struct JobsWithGeo extends FetchedJob {
+    double lng,
+    double lat,
+    i32 confidence,
+    string address,
+}
+
+
+func list<JobsWithGeo> getJobsWithGeo(list<i32> ids) {
+
+SELECT
+  j.*,
+  a.lng,
+  a.lat,
+  a.confidence,
+  a.address
+FROM jobs2 j LEFT JOIN geo_address a ON j.address_id = a.id
+WHERE COALESCE(status, 0) & 8 != 8 AND j.id IN (:ids)
+ORDER BY FIELD(j.id, :ids)
+
+}
+
+func list<JobsWithGeo> getJobs2WithGeo(list<i32> ids) {
+
+SELECT
+  j.*,
+  a.lng,
+  a.lat,
+  a.confidence,
+  a.address
+FROM jobs2 j LEFT JOIN geo_address a ON j.address_id = a.id
+WHERE COALESCE(status, 0) & 8 != 8 AND j.id IN (:ids)
+ORDER BY FIELD(j.id, :ids)
+
+}
+
+
+func list<JobsWithGeo> getJobsWithGeo(i64 maxid, i32 limit) {
+
+SELECT
+  j.*,
+  a.lng,
+  a.lat,
+  a.confidence,
+  a.address
+FROM jobs j
+  LEFT JOIN geo_address a ON j.address_id = a.id
+WHERE COALESCE(j.status, 0) & 8 != 8 AND j.title != '' AND j.id < :maxid
+ORDER BY j.id DESC
+LIMIT :limit
+
+}
+
+struct JobsTiny {
+    long id,
+    string url,
+    string provider,
+    string title,
+    string company,
+    string place,
+
+    string experience,
+    string salary,
+    string degree,
+    string kind,
+    string industry,
+    string jobclass,
+
+    datetime publishDate
+    datetime updateDate
+
+    double lng,
+    double lat,
+    i32 confidence,
+}
+
+func list<JobsTiny> getJobsTiny(i64 maxid, i32 limit) {
+
+SELECT
+  j.*,
+  a.lng,
+  a.lat,
+  a.confidence,
+  a.address
+FROM jobs2_tiny j
+  LEFT JOIN geo_address a ON j.address_id = a.id
+WHERE COALESCE(j.status, 0) & 8 != 8 AND j.id < :maxid
+ORDER BY j.id DESC
+LIMIT :limit
+
+}
+
+struct BlueJob {
+    i32 id,
+    string url,
+    string provider,
+    string title,
+
+    string company,
+    string city,
+    string address,
+
+    string experience,
+    string salary,
+    string degree,
+    string kind
+
+    string requirement
+    string description
+    datetime publishDate
+    datetime updateDate
+}
+
+func List<BlueJob> getBlueJobs(i64 maxid, i32 limit) {
+    SELECT *
+    FROM jobs2_blue
+    WHERE id < :maxid and COALESCE(status, 0) & 8 != 8
+    ORDER BY id DESC
+    LIMIT :limit
+}
+
+func List<BlueJob> getBlueJobs(list<i32> ids) {
+    SELECT *
+    FROM jobs2_blue
+    WHERE COALESCE(status, 0) & 8 != 8 AND id in (:ids)
+    ORDER BY FIELD(id, :ids)
+}
+
+struct SalaryJob {
+       i32 id,
+       i32 companyId,
+       string jobTitle
+}
+
+func SalaryJob getSalaryJob(i64 id) {
+     select * from company_salary_job where salary_job_id = :id
+}
+
+struct UgcTitle {
+       i32 id,
+       string jobTitle
+}
+
+func UgcTitle getUgcTitle(i32 id) {
+     select * from position_data where id = :id
+}
+
+func UgcTitle getUgcTitle(string title) {
+     select * from position_data where job_title = :title
+}
+
+func List<UgcTitle> getUgcTitles() {
+     select id, job_title from position_data
+}
+
+func i32 saveUgcTitle(string title) {
+     insert into position_data (job_title) value (:title)
+}
+
+struct SalaryCompanyId {
+       i32 titleId,
+       i32 companyId,
+}
+
+func list<SalaryCompanyId> getSalaryJobIds(list<i32> ids, string title) {
+     select salary_job_id title_id, company_id from company_salary_job where company_id in (:ids) and job_title = :title
+}
+
+func i32 getSalaryJobID (i32 cid, string title) {
+  select salary_job_id from company_salary_job where company_id = :cid and job_title = :title limit 1
+}
+
+func i32 getJobId(string title) {
+  select * from position_data where job_title = :title
+}
+
+struct JobAlias {
+  string fromName
+  string toName
+  int flags
+}
+
+func list<JobAlias> getJobAliases() {
+  select from_name, to_name, flags from job_alias where company_id = 0;
+}
+
+struct Review {
+  i32 id
+  i32 companyId
+  i32 cityCode
+  i32 industryCode
+
+  i32 rating   // 总体评分
+  i32 ratingCareer // 职业成长评分(1-5)
+  i32 ratingSkill // 个人技能成长评分(1-5分)
+  i32 ratingAtmosphere // 工作氛围评分(1-5分)
+  i32 ratingPressure // 工作压力评分(1-5分)
+  i32 ratingProspect // 前景评分(1-5分)
+  i32 ratingCeo // CEO评分(1:赞同, 2:不赞同)
+  i32 recommendFriend // 是否推荐朋友(1:不推荐；2:推荐)
+  i32 futureStatus // 未来状况(1:变好；2:不变；3:变差)
+
+  string jobTitle
+  i32 weight
+  datetime createTime
+  string title
+  string pros
+  string cons
+  string advice
+  string company
+  i32 employeeStatus //在职状态(1:在职；2:离职)
+  i32 type //类型 0初版点评 1优缺点、建议合并版点评 3用户标签点评
+}
+
+func list<Review> getReviews(i32 minid, i32 limit) {
+
+SELECT
+  r.*,
+  e.pros,
+  e.cons,
+  e.advice,
+  c.name company,
+  c.industry_code
+FROM company_review r
+  JOIN company_review_extra e ON r.id = e.review_id
+  JOIN company c ON c.id = r.company_id
+WHERE r.status = 1 AND r.id > :minid
+ORDER BY r.id
+LIMIT :limit
+
+}
+
+func list<Review> getReviews(list<i32> ids) {
+
+SELECT
+  r.*,
+  e.pros,
+  e.cons,
+  e.advice,
+  c.name company,
+  c.industry_code
+FROM company_review r
+  JOIN company_review_extra e ON r.id = e.review_id
+  JOIN company c ON c.id = r.company_id
+WHERE r.status = 1 AND r.id in (:ids)
+ORDER BY FIELD(r.id, :ids)
+
+}
+
+struct Industry {
+    i32 code
+    string name
+    i32 parentCode
+}
+
+func list<Industry> getIndustries() {
+    select * from industry;
+}
+
+struct Company {
+    i32 id
+    string name
+    string fullName
+    string ceo
+    i32 city
+    i32 review
+    i32 interview
+    i32 salary
+    i32 photo
+    i32 sort
+    i32 industry
+}
+
+func list<Company> getCompanies(i32 minId, i32 limit) {
+
+
+SELECT
+  c.id,
+  c.name,
+  c.full_name,
+  c.ceo,
+  c.city_code       city,
+  c.industry_code   industry,
+  s.review_count    review,
+  s.interview_count interview,
+  s.salary_count    salary,
+  s.photo_count     photo,
+  ss.score           sort
+FROM company c
+  left JOIN company_stat s ON c.id = s.company_id
+  left JOIN company_sort_stat ss ON c.id = ss.id
+WHERE c.id > :minId
+ORDER BY c.id
+LIMIT :limit
+
+
+}
+
+struct ComReviewTag {
+       i32 reviewId
+       i32 tagId
+}
+
+func list<ComReviewTag> getComReviewTags(list<i32> ids) {
+SELECT
+  review_id,
+  tag_id
+FROM company_review_tag crt
+  JOIN review_tag_data rt ON crt.tag_id=rt.id
+WHERE review_id in (:ids)
+}
+
+struct ReviewTagData {
+       i32 id
+       string tagName
+       string matchRule
+}
+
+func list<ReviewTagData> getReviewTagDatas() {
+SELECT
+  id,
+  tag_name,
+  match_rule
+FROM review_tag_data
+}
+
+struct BossJob {
+    i32 id,
+    string title,
+    i32 lowSalary,
+    i32 highSalary,
+    i32 jobType,
+    string experience,
+    string degree,
+    string city,
+
+    string companyName,
+    string companyFullName,
+
+    string bossTitle
+    string bossName
+    string bossPicLarge
+    string bossPicTiny
+
+    i32 lureId
+    string description,
+    string lureContent
+    string scale
+    string website
+    string address
+
+    datetime refreshTime,
+    datetime addTime,
+}
+
+
+func list<BossJob> getBossJobs() {
+
+SELECT
+  j.id,
+  j.position_name      title,
+  j.low_salary,
+  j.high_salary,
+  j.job_type,
+  pc.name              position,
+
+  d_cc.name            degree,
+  e_cc.name            experience,
+  j.refresh_time,
+  j.add_time,
+  j.post_description   description,
+  j.lure_id,
+  city.name            city,
+
+
+  ue.company_name      company_name,
+  ue.company_full_name,
+  ue.company_address   address,
+  ue.office_website    website,
+
+  ue.title             boss_title,
+  ui.name              boss_name,
+  ui.large             boss_pic_large,
+  ui.tiny              boss_pic_tiny,
+
+  s_cc.name            scale,
+
+  lc.content           lure_content
+
+FROM job j
+  JOIN user_extra ue ON ue.user_id = j.user_id AND ue.identity_type = 1
+  JOIN city ON city.code = j.location
+  JOIN user_info ui ON ui.user_id = j.user_id
+  JOIN common_config d_cc ON d_cc.code = j.degree
+  JOIN common_config e_cc ON e_cc.code = j.experience
+  JOIN user ON user.id = j.user_id
+  JOIN position_config pc ON pc.code = j.position
+  LEFT JOIN common_config s_cc ON s_cc.code = ue.scale
+  LEFT JOIN lure_content lc ON ue.lure_id = lc.id AND lc.lure_type = 1
+
+WHERE j.deleted != 1 AND j.audit_status != 2 AND ue.company_name IS NOT NULL AND ue.status = 0 AND user.status = 0
+
+}
+
+
+func list<BossJob> getBossJobs(list<i32> ids) {
+
+SELECT
+  j.id,
+  j.position_name      title,
+  j.low_salary,
+  j.high_salary,
+  j.job_type,
+  pc.name              position,
+
+  d_cc.name            degree,
+  e_cc.name            experience,
+  j.refresh_time,
+  j.add_time,
+  j.post_description   description,
+  j.lure_id,
+  city.name            city,
+
+
+  ue.company_name      company_name,
+  ue.company_full_name,
+  ue.company_address   address,
+  ue.office_website    website,
+
+  ue.title             boss_title,
+  ui.name              boss_name,
+  ui.large             boss_pic_large,
+  ui.tiny              boss_pic_tiny,
+
+  s_cc.name            scale,
+
+  lc.content           lure_content
+
+FROM job j
+  JOIN user_extra ue ON ue.user_id = j.user_id AND ue.identity_type = 1
+  JOIN city ON city.code = j.location
+  JOIN user_info ui ON ui.user_id = j.user_id
+  JOIN common_config d_cc ON d_cc.code = j.degree
+  JOIN common_config e_cc ON e_cc.code = j.experience
+  JOIN user ON user.id = j.user_id
+  JOIN position_config pc ON pc.code = j.position
+  LEFT JOIN common_config s_cc ON s_cc.code = ue.scale
+  LEFT JOIN lure_content lc ON ue.lure_id = lc.id AND lc.lure_type = 1
+
+WHERE j.id IN (:ids) ORDER BY FIELD(j.id, :ids)
+
+}
+
+
+
